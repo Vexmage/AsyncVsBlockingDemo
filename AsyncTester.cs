@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
+using System.Net;
 
 public class AsyncTester
 {
@@ -56,39 +57,80 @@ public class AsyncTester
     }
 
 
-    // API Call (New Feature)
+    // API Call 
     public async Task RunApiCallTest()
     {
         Console.WriteLine("Fetching data from API...");
         _stopwatch.Restart();
-        string data = await FetchDataAsync();
-        _stopwatch.Stop();
-        Console.WriteLine($"API Response (First 100 chars): {data.Substring(0, 100)}...");
-        Console.WriteLine($"API Call Time: {_stopwatch.ElapsedMilliseconds} ms\n");
+        try
+        {
+            string data = await FetchDataAsync();
+            _stopwatch.Stop();
+            Console.WriteLine($"API Response (First 100 chars): {data.Substring(0, 100)}...");
+            Console.WriteLine($"API Call Time: {_stopwatch.ElapsedMilliseconds} ms\n");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"API call failed: {ex.Message}\n");
+        }
     }
 
 
-    private async Task<string> FetchDataAsync()
-    {
-        HttpResponseMessage response = await _httpClient.GetAsync("https://jsonplaceholder.typicode.com/posts");
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadAsStringAsync();
-    }
-
-
-    // Parallel API Calls (New Feature)
+    // Parallel API Calls 
     public async Task RunParallelApiCalls()
     {
         Console.WriteLine("Starting parallel API calls...");
         _stopwatch.Restart();
-        Task<string> task1 = FetchDataAsync();
-        Task<string> task2 = FetchDataAsync();
-        Task<string> task3 = FetchDataAsync();
+        try
+        {
+            Task<string> task1 = FetchDataAsync();
+            Task<string> task2 = FetchDataAsync();
+            Task<string> task3 = FetchDataAsync();
 
-        string[] results = await Task.WhenAll(task1, task2, task3);
-        _stopwatch.Stop();
-        Console.WriteLine($"Parallel API Calls Completed in: {_stopwatch.ElapsedMilliseconds} ms\n");
+            string[] results = await Task.WhenAll(task1, task2, task3);
+            _stopwatch.Stop();
+            Console.WriteLine($"Parallel API Calls Completed in: {_stopwatch.ElapsedMilliseconds} ms\n");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"One or more API calls failed: {ex.Message}\n");
+        }
     }
+    private async Task<string> FetchDataAsync()
+    {
+        string apiUrl = "https://jsonplaceholder.typicode.com/posts"; // Replace with a real API
+
+        try
+        {
+            HttpResponseMessage response = await _httpClient.GetAsync(apiUrl);
+
+            // Handle unsuccessful responses
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"API returned {response.StatusCode} ({(int)response.StatusCode})");
+                return $"API Error: {response.StatusCode}";
+            }
+
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.RequestTimeout)
+        {
+            return "API request timed out.";
+        }
+        catch (HttpRequestException ex)
+        {
+            return $"🚨 Network or API failure: {ex.Message}";
+        }
+        catch (TaskCanceledException)
+        {
+            return "API call was canceled (possible timeout).";
+        }
+        catch (Exception ex)
+        {
+            return $"Unexpected error: {ex.Message}";
+        }
+    }
+
 
     // Async Method Helper (Used in Parallel Async Execution)
 
