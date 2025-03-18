@@ -8,6 +8,8 @@ This project demonstrates the difference between **blocking (`Thread.Sleep`)** a
 - A **mixed method** that combines both blocking and async behavior.
 - A **real-world API call** that demonstrates async HTTP requests.
 - **Parallel API calls** to show how multiple requests can be handled concurrently.
+- **Error Handling** – Catch network failures, timeouts, and bad HTTP responses.
+  
 
 
 ## Why This Matters
