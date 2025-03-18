@@ -4,11 +4,73 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net;
+using Microsoft.EntityFrameworkCore;
 
 public class AsyncTester
 {
     private readonly Stopwatch _stopwatch = new Stopwatch();
     private static readonly HttpClient _httpClient = new HttpClient();
+    private readonly DatabaseContext _dbContext = new DatabaseContext();
+
+    public async Task InitializeDatabaseAsync()
+    {
+        Console.WriteLine("Initializing Database...");
+        await _dbContext.Database.EnsureCreatedAsync();
+        await _dbContext.InitializeDatabaseAsync();
+        Console.WriteLine("Database Ready!\n");
+    }
+
+    // Save API Response to SQLite
+    public async Task SaveApiResponseToDatabaseAsync()
+    {
+        Console.WriteLine("Fetching data from API and saving to database...");
+        _stopwatch.Restart();
+
+        string data = await FetchDataAsync();
+        if (string.IsNullOrEmpty(data) || data.StartsWith("API Error") || data.StartsWith("🚨"))
+        {
+            Console.WriteLine($"API call failed, not saving to database.\n");
+            return;
+        }
+
+        var response = new ApiResponse
+        {
+            Data = data.Substring(0, 500), // Store only first 500 chars
+            RetrievedAt = DateTime.UtcNow
+        };
+
+        await _dbContext.Database.EnsureCreatedAsync();
+        _dbContext.ApiResponses.Add(response);
+        await _dbContext.SaveChangesAsync();
+
+        _stopwatch.Stop();
+        Console.WriteLine($"API Response Saved! (Time: {_stopwatch.ElapsedMilliseconds} ms)\n");
+    }
+
+    // Retrieve API Responses from SQLite
+    public async Task RetrieveApiResponsesAsync()
+    {
+        Console.WriteLine("📤 Retrieving stored API responses from database...");
+        _stopwatch.Restart();
+
+        var responses = await _dbContext.ApiResponses.ToListAsync();
+        _stopwatch.Stop();
+
+        if (responses.Count == 0)
+        {
+            Console.WriteLine("No data found in the database.\n");
+        }
+        else
+        {
+            foreach (var response in responses)
+            {
+                Console.WriteLine($"📝 ID: {response.Id} | Retrieved: {response.RetrievedAt} | Data (first 100 chars): {response.Data.Substring(0, 100)}...\n");
+            }
+        }
+
+        Console.WriteLine($"⏳ Database Query Time: {_stopwatch.ElapsedMilliseconds} ms\n");
+    }
+
 
     // Original Blocking Method test
     public void RunBlockingTest()

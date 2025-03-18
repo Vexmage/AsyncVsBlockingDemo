@@ -19,6 +19,12 @@ class Program
         await tester.RunApiCallTest();
         await tester.RunParallelApiCalls();
 
+        // Save API Response to Database
+        await tester.SaveApiResponseToDatabaseAsync();
+
+        // Retrieve API Responses from Database
+        await tester.RetrieveApiResponsesAsync();
+
 
         Console.WriteLine("Done!");
     }
