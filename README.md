@@ -45,3 +45,15 @@ Parallel Async Execution Time: 5000 ms
 Mixed method started...
 Mixed method finished.
 Mixed Method Time: 10000 ms
+
+## How It Works
+- Blocking Method() -- Uses Thread.Sleep(5000), pausing execution.
+- AsyncMethod() -- Uses Task.Delay(5000), allowing non-blocking execution.
+- Task.WhenAll(AsyncMethod, AsyncMethod) -- Runs multiple async tasks in parallel, completing in the same time as one.
+- MixedMethod() -- Uses both Thread.Sleep and Task.Delay, leading to inefficient execution.
+
+## Key Takeaways
+- Avoid Thread.Sleep in real-world applications – it completely blocks execution.
+- Use Task.Delay for async, non-blocking operations to keep apps responsive.
+- Run async tasks in parallel (Task.WhenAll) to improve performance.
+- Mixing blocking & async negates async benefits – be mindful when combining them.
